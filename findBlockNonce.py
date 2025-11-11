@@ -19,6 +19,42 @@ def mine_block(k, prev_hash, transactions):
         return b'\x00'
 
     # TODO your code to find a nonce here
+    nonce_counter = 0
+    
+    # Create a mask for checking k trailing zeros in binary
+    # For k trailing zeros, the last k bits should be 0
+    # So hash_value & ((1 << k) - 1) should equal 0
+    mask = (1 << k) - 1
+    
+    while True:
+        # Create the nonce as bytes
+        nonce = str(nonce_counter).encode('utf-8')
+        
+        # Create the hash object
+        m = hashlib.sha256()
+        
+        # Add previous block hash
+        m.update(prev_hash)
+        
+        # Add all transactions in order
+        for transaction in transactions:
+            m.update(transaction.encode('utf-8'))
+        
+        # Add the nonce
+        m.update(nonce)
+        
+        # Get the hash digest as bytes
+        hash_bytes = m.digest()
+        
+        # Convert hash bytes to integer for checking trailing zeros
+        hash_int = int.from_bytes(hash_bytes, byteorder='big')
+        
+        # Check if the last k bits are all zeros
+        if (hash_int & mask) == 0:
+            # Found a valid nonce
+            break
+        
+        nonce_counter += 1
 
     assert isinstance(nonce, bytes), 'nonce should be of type bytes'
     return nonce
@@ -51,6 +87,9 @@ if __name__ == '__main__':
     # The grader will not exceed 20 bits of "difficulty" because larger values take to long
     diff = 20
 
+    # Create a dummy previous hash (genesis block)
+    prev_hash = b'\x00' * 32  # 32 bytes of zeros for genesis block
+    
     transactions = get_random_lines(filename, num_lines)
-    nonce = mine_block(diff, transactions)
+    nonce = mine_block(diff, prev_hash, transactions)
     print(nonce)
